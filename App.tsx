@@ -3,8 +3,6 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Product, SupabaseConfig } from './types';
 import { SupabaseService } from './services/supabaseService';
 
-// Components
-import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import StatsCards from './components/StatsCards';
 import InventoryTable from './components/InventoryTable';
@@ -68,6 +66,10 @@ const App: React.FC = () => {
 
   const handleSaveProduct = async (data: Partial<Product>) => {
     if (!supabase) return;
+    if (data.quantity == null || data.quantity < 1) {
+      alert('Please enter a quantity of at least 1 before saving.');
+      return;
+    }
     try {
       if (editingProduct) {
         await supabase.updateProduct(editingProduct.product_name, data);
@@ -96,6 +98,12 @@ const App: React.FC = () => {
     } catch (err: any) {
       alert('Error deleting product: ' + err.message);
     }
+  };
+
+  const handleCheckProduct = (product: Product) => {
+    // Minimal check action: record activity and refresh inventory (no quantity change)
+    addActivity('check', `Checked inventory for ${product.product_name}`);
+    refreshInventory(true);
   };
 
   // Chatbot removed: AI command processing disabled
@@ -128,9 +136,8 @@ const App: React.FC = () => {
   );
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC]">
-      <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <div className="min-h-screen bg-[#F8FAFC]">
+      <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header 
           onAddClick={() => { setEditingProduct(undefined); setIsModalOpen(true); }} 
           onSearchChange={setSearchQuery}
@@ -139,7 +146,7 @@ const App: React.FC = () => {
         />
         
         <main className="flex-1 overflow-y-auto p-4 lg:p-8">
-          <div className="max-w-7xl mx-auto space-y-8">
+          <div className="space-y-8">
             {/* Hero */}
             <section className="card hero-bg p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex-1">
@@ -166,6 +173,7 @@ const App: React.FC = () => {
                   products={filteredProducts} 
                   onEdit={(p) => { setEditingProduct(p); setIsModalOpen(true); }}
                   onDelete={handleDeleteProduct}
+                  onCheck={handleCheckProduct}
                   loading={loading}
                 />
                 <ActivityFeed activities={activities} />

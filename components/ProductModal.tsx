@@ -12,9 +12,10 @@ interface ProductModalProps {
 const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, product }) => {
   const [formData, setFormData] = useState<Partial<Product>>({
     product_name: '',
-    quantity: 0,
+    quantity: 1,
     cost: 0
   });
+  const [quantityError, setQuantityError] = useState<string | null>(null);
 
   useEffect(() => {
     if (product) {
@@ -28,6 +29,11 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.product_name || (formData.quantity == null) || formData.quantity < 1) {
+      setQuantityError('Please enter a quantity of at least 1');
+      return;
+    }
+    setQuantityError(null);
     onSave(formData);
   };
 
@@ -62,12 +68,19 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
               <input 
                 required
                 type="number" 
-                min="0"
-                value={formData.quantity}
-                onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
+                min="1"
+                  value={formData.quantity}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    const qty = Number.isNaN(val) ? 0 : val;
+                    setFormData({ ...formData, quantity: qty });
+                    if (qty < 1) setQuantityError('Please enter a quantity of at least 1');
+                    else setQuantityError(null);
+                  }}
                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
                 placeholder="0"
               />
+                {quantityError && <p className="text-xs text-rose-600 mt-1">{quantityError}</p>}
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1 tracking-wide">Unit Cost ($)</label>
@@ -94,7 +107,8 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
             </button>
             <button 
               type="submit"
-              className="flex-2 px-4 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all"
+              disabled={!!quantityError}
+              className={`flex-2 px-4 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all ${quantityError ? 'opacity-60 pointer-events-none' : ''}`}
             >
               {product ? 'Update Details' : 'Save Product'}
             </button>

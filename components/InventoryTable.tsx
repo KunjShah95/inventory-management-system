@@ -6,10 +6,11 @@ interface InventoryTableProps {
   products: Product[];
   onEdit: (product: Product) => void;
   onDelete: (name: string) => void;
+  onCheck?: (product: Product) => void;
   loading: boolean;
 }
 
-const InventoryTable: React.FC<InventoryTableProps> = ({ products, onEdit, onDelete, loading }) => {
+const InventoryTable: React.FC<InventoryTableProps> = ({ products, onEdit, onDelete, onCheck, loading }) => {
   const getStatus = (qty: number) => {
     if (qty <= 0) return { label: 'Out of Stock', class: 'bg-rose-100 text-rose-700' };
     if (qty < 10) return { label: 'Low Stock', class: 'bg-amber-100 text-amber-700' };
@@ -91,6 +92,15 @@ const InventoryTable: React.FC<InventoryTableProps> = ({ products, onEdit, onDel
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={() => onCheck && onCheck(product)}
+                        className="p-2 text-slate-400 hover:text-slate-800 hover:bg-white rounded-lg border border-transparent hover:border-slate-200 shadow-none hover:shadow-sm transition-all"
+                        aria-label={`Check ${product.product_name}`}
+                        title={`Check ${product.product_name}`}
+                      >
+                        <i className="fas fa-check"></i>
+                      </button>
                       <button 
                         type="button"
                         onClick={() => onEdit(product)}

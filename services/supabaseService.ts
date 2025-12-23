@@ -41,6 +41,8 @@ export class SupabaseService {
   async createProduct(product: Partial<Product>): Promise<Product> {
     // Ensure we send both possible column names so DB captures the value regardless of schema
     const payload: any = { ...product };
+    // Enforce minimum quantity of 1
+    if (payload.quantity == null || payload.quantity < 1) payload.quantity = 1;
     if (payload.cost != null) {
       if (payload.price == null) payload.price = payload.cost;
       if (payload.unit_price == null) payload.unit_price = payload.cost;
@@ -65,6 +67,8 @@ export class SupabaseService {
   async updateProduct(name: string, updates: Partial<Product>): Promise<Product> {
     // Mirror cost/price fields to increase chance DB column is updated regardless of naming
     const payload: any = { ...updates };
+    // Enforce minimum quantity of 1 when updating
+    if (payload.quantity != null && payload.quantity < 1) payload.quantity = 1;
     if (payload.cost != null) {
       if (payload.price == null) payload.price = payload.cost;
       if (payload.unit_price == null) payload.unit_price = payload.cost;
