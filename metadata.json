@@ -1,0 +1,5 @@
+{
+  "name": "Smart Stock - AI Inventory Dashboard",
+  "description": "A sophisticated inventory management dashboard featuring natural language command processing via Gemini, real-time data visualization, and full CRUD operations integrated with Supabase.",
+  "requestFramePermissions": []
+}
