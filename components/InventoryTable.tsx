@@ -6,16 +6,25 @@ interface InventoryTableProps {
   products: Product[];
   onEdit: (product: Product) => void;
   onDelete: (name: string) => void;
+  onRestore?: (name: string) => void;
   onCheck?: (product: Product) => void;
+  viewMode: 'active' | 'inactive' | 'all';
+  onChangeView: (v: 'active' | 'inactive' | 'all') => void;
   loading: boolean;
 }
 
-const InventoryTable: React.FC<InventoryTableProps> = ({ products, onEdit, onDelete, onCheck, loading }) => {
+const InventoryTable: React.FC<InventoryTableProps> = ({ products, onEdit, onDelete, onRestore, onCheck, viewMode, onChangeView, loading }) => {
   const getStatus = (qty: number) => {
     if (qty <= 0) return { label: 'Out of Stock', class: 'bg-rose-100 text-rose-700' };
     if (qty < 10) return { label: 'Low Stock', class: 'bg-amber-100 text-amber-700' };
     return { label: 'In Stock', class: 'bg-emerald-100 text-emerald-700' };
   };
+
+  const displayed = products.filter(p => {
+    if (viewMode === 'active') return (p.isActive !== false);
+    if (viewMode === 'inactive') return (p.isActive === false);
+    return true;
+  });
 
   return (
     <div className="card rounded-3xl shadow-sm overflow-hidden">
@@ -24,9 +33,26 @@ const InventoryTable: React.FC<InventoryTableProps> = ({ products, onEdit, onDel
           <h2 className="text-lg font-bold text-slate-800">Inventory Catalog</h2>
           <p className="text-xs text-slate-400 font-medium">Manage your products and stock levels</p>
         </div>
-        <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold ring-1 ring-slate-200">
-          {products.length} Products
-        </span>
+        <div className="flex items-center space-x-2">
+          <button
+            type="button"
+            onClick={() => onChangeView('active')}
+            className={`px-3 py-1 rounded-lg text-sm font-semibold ${viewMode === 'active' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-100'}`}>
+            Active
+          </button>
+          <button
+            type="button"
+            onClick={() => onChangeView('inactive')}
+            className={`px-3 py-1 rounded-lg text-sm font-semibold ${viewMode === 'inactive' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-100'}`}>
+            Inactive
+          </button>
+          <button
+            type="button"
+            onClick={() => onChangeView('all')}
+            className={`px-3 py-1 rounded-lg text-sm font-semibold ${viewMode === 'all' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-100'}`}>
+            All
+          </button>
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left">
@@ -41,13 +67,13 @@ const InventoryTable: React.FC<InventoryTableProps> = ({ products, onEdit, onDel
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {loading && products.length === 0 ? (
+            {loading && displayed.length === 0 ? (
               [...Array(5)].map((_, i) => (
                 <tr key={i} className="animate-pulse">
                   <td colSpan={6} className="px-6 py-6"><div className="h-10 bg-slate-50 rounded-xl w-full"></div></td>
                 </tr>
               ))
-            ) : products.length === 0 ? (
+            ) : displayed.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-6 py-20 text-center text-slate-400">
                   <div className="flex flex-col items-center">
@@ -59,62 +85,78 @@ const InventoryTable: React.FC<InventoryTableProps> = ({ products, onEdit, onDel
                   </div>
                 </td>
               </tr>
-            ) : products.map((product) => {
-              const status = getStatus(product.quantity);
-              return (
-                <tr key={product.product_id} className="hover:bg-slate-50/80 group transition-all duration-200">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-xl bg-linear-to-br from-indigo-50 to-blue-50 flex items-center justify-center text-indigo-600 font-bold border border-indigo-100 shadow-sm">
-                        {product.product_name.charAt(0).toUpperCase()}
+            ) : (
+              displayed.map((product) => {
+                const active = (product.isActive !== false);
+                const status = getStatus(product.quantity);
+                return (
+                  <tr key={product.product_id} className={`hover:bg-slate-50/80 group transition-all duration-200 ${!active ? 'opacity-70 italic' : ''}`}>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center">
+                        <div>
+                          <span className="font-bold text-slate-800 block text-sm">{product.product_name}</span>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-[10px] text-slate-400 font-mono tracking-tighter uppercase">#{product.product_id}</span>
+                            {!active && <span className="text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-md font-bold">Inactive</span>}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <span className="font-bold text-slate-800 block text-sm">{product.product_name}</span>
-                        <span className="text-[10px] text-slate-400 font-mono tracking-tighter uppercase">#{product.product_id}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${status.class}`}>
+                        {status.label}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm font-bold text-slate-700">{product.quantity.toLocaleString()}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm font-medium text-slate-500">₹{(product.cost || 0).toFixed(2)}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm font-black text-slate-900">
+                        ₹{((product.quantity || 0) * (product.cost || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end space-x-1 opacity-100 transition-opacity">
+                        <button 
+                          type="button"
+                          onClick={() => onEdit(product)}
+                          disabled={!active}
+                          className={`p-2 ${!active ? 'text-slate-300' : 'text-slate-700 hover:text-indigo-600'} bg-transparent rounded-lg border border-transparent hover:border-slate-200 shadow-none hover:shadow-sm transition-all`}
+                          aria-label={`Edit ${product.product_name}`}
+                          title={`Edit ${product.product_name}`}
+                        >
+                          <i className="fas fa-pen-to-square"></i>
+                        </button>
+                        {active ? (
+                          <button 
+                            type="button"
+                            onClick={() => onDelete(product.product_name)}
+                            className="p-2 text-slate-700 hover:text-rose-600 bg-transparent rounded-lg border border-transparent hover:border-slate-200 shadow-none hover:shadow-sm transition-all"
+                            aria-label={`Delete ${product.product_name}`}
+                            title={`Delete ${product.product_name}`}
+                          >
+                            <i className="fas fa-trash-can"></i>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => onRestore && onRestore(product.product_name)}
+                            className="p-2 text-slate-700 hover:text-emerald-600 bg-transparent rounded-lg border border-transparent hover:border-slate-200 shadow-none hover:shadow-sm transition-all"
+                            aria-label={`Restore ${product.product_name}`}
+                            title={`Restore ${product.product_name}`}
+                          >
+                            <i className="fas fa-rotate-left"></i>
+                          </button>
+                        )}
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${status.class}`}>
-                      {status.label}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-bold text-slate-700">{product.quantity.toLocaleString()}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-medium text-slate-500">${(product.cost || 0).toFixed(2)}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-black text-slate-900">
-                      ${((product.quantity || 0) * (product.cost || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end space-x-1 opacity-100 transition-opacity">
-                      <button 
-                        type="button"
-                        onClick={() => onEdit(product)}
-                        className="p-2 text-slate-700 hover:text-indigo-600 bg-transparent rounded-lg border border-transparent hover:border-slate-200 shadow-none hover:shadow-sm transition-all"
-                        aria-label={`Edit ${product.product_name}`}
-                        title={`Edit ${product.product_name}`}
-                      >
-                        <i className="fas fa-pen-to-square"></i>
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={() => onDelete(product.product_name)}
-                        className="p-2 text-slate-700 hover:text-rose-600 bg-transparent rounded-lg border border-transparent hover:border-slate-200 shadow-none hover:shadow-sm transition-all"
-                        aria-label={`Delete ${product.product_name}`}
-                        title={`Delete ${product.product_name}`}
-                      >
-                        <i className="fas fa-trash-can"></i>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>

@@ -21,7 +21,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
     if (product) {
       setFormData(product);
     } else {
-      setFormData({ product_name: '', quantity: 0, cost: 0 });
+      setFormData({ product_name: '', quantity: 1, cost: 0 });
     }
   }, [product, isOpen]);
 
@@ -72,18 +72,19 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                   value={formData.quantity}
                   onChange={(e) => {
                     const val = parseInt(e.target.value);
-                    const qty = Number.isNaN(val) ? 0 : val;
-                    setFormData({ ...formData, quantity: qty });
+                    const qty = Number.isNaN(val) ? 1 : val;
+                    const clamped = Math.max(1, qty);
+                    setFormData({ ...formData, quantity: clamped });
                     if (qty < 1) setQuantityError('Please enter a quantity of at least 1');
                     else setQuantityError(null);
                   }}
                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
-                placeholder="0"
+                placeholder="1"
               />
                 {quantityError && <p className="text-xs text-rose-600 mt-1">{quantityError}</p>}
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1 tracking-wide">Unit Cost ($)</label>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1 tracking-wide">Unit Cost (Rs)</label>
               <input 
                 required
                 type="number" 

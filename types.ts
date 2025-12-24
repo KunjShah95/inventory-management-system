@@ -4,6 +4,7 @@ export interface Product {
   product_name: string;
   quantity: number;
   cost: number;
+  isActive?: boolean;
   created_at?: string;
 }
 

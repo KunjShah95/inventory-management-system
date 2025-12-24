@@ -21,8 +21,8 @@ const StatsCards: React.FC<{ products: Product[] }> = ({ products }) => {
       />
       <StatCard 
         label="Inventory Value" 
-        value={`$${stats.totalValue.toLocaleString()}`} 
-        icon="fa-dollar-sign" 
+        value={`₹${stats.totalValue.toLocaleString()}`} 
+        icon="fa-indian-rupee-sign" 
         color="bg-emerald-500" 
         trend="+5.4% growth"
       />

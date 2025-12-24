@@ -29,10 +29,7 @@ const ActivityFeed: React.FC<{ activities: Activity[] }> = ({ activities }) => {
         {activities.length === 0 ? (
           <p className="text-sm text-slate-400 italic text-center py-4">No recent activity recorded.</p>
         ) : activities.map((activity) => (
-          <div key={activity.id} className="relative pl-8 flex items-start space-x-3">
-            <div className={`absolute left-0 w-6 h-6 rounded-full bg-white border border-slate-100 flex items-center justify-center shadow-sm z-10`}>
-              <i className={`fas ${getIcon(activity.type)} text-[10px]`}></i>
-            </div>
+          <div key={activity.id} className="relative pl-4 flex items-start">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-slate-700 truncate">{activity.message}</p>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">

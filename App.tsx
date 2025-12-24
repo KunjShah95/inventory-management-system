@@ -31,6 +31,7 @@ const App: React.FC = () => {
   });
   
   const [products, setProducts] = useState<Product[]>([]);
+  const [viewMode, setViewMode] = useState<'active' | 'inactive' | 'all'>('active');
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -48,11 +49,11 @@ const App: React.FC = () => {
     }, ...prev].slice(0, 10));
   };
 
-  const refreshInventory = useCallback(async (quiet = false) => {
+  const refreshInventory = useCallback(async (show: 'active' | 'inactive' | 'all' = viewMode, quiet = false) => {
     if (!supabase) return;
     if (!quiet) setLoading(true);
     try {
-      const data = await supabase.fetchProducts();
+      const data = await supabase.fetchProducts(show);
       setProducts(data);
     } catch (err: any) {
       console.error(err.message);
@@ -60,11 +61,16 @@ const App: React.FC = () => {
     } finally {
       if (!quiet) setLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, viewMode]);
 
   useEffect(() => {
     if (config) refreshInventory();
   }, [config, refreshInventory]);
+
+  useEffect(() => {
+    // refresh when view mode changes
+    refreshInventory(viewMode, true);
+  }, [viewMode, refreshInventory]);
 
   const handleSaveProduct = async (data: Partial<Product>) => {
     if (!supabase) return;
@@ -83,7 +89,7 @@ const App: React.FC = () => {
         });
         addActivity('create', `Manually added ${data.product_name}`);
       }
-      refreshInventory(true);
+      refreshInventory(viewMode, true);
       setIsModalOpen(false);
       setEditingProduct(undefined);
     } catch (err: any) {
@@ -106,10 +112,21 @@ const App: React.FC = () => {
     if (!supabase || !name) return;
     try {
       await supabase.deleteProduct(name);
-      addActivity('delete', `Deleted product: ${name}`);
-      refreshInventory(true);
+      addActivity('delete', `Moved to inactive: ${name}`);
+      refreshInventory(viewMode, true);
     } catch (err: any) {
       showAlert('Error deleting product: ' + err.message);
+    }
+  };
+
+  const handleRestoreProduct = async (name: string) => {
+    if (!supabase) return;
+    try {
+      await supabase.restoreProduct(name);
+      addActivity('update', `Restored product: ${name}`);
+      refreshInventory(viewMode, true);
+    } catch (err: any) {
+      showAlert('Error restoring product: ' + err.message);
     }
   };
 
@@ -135,7 +152,7 @@ const App: React.FC = () => {
   const handleCheckProduct = (product: Product) => {
     // Minimal check action: record activity and refresh inventory (no quantity change)
     addActivity('check', `Checked inventory for ${product.product_name}`);
-    refreshInventory(true);
+    refreshInventory(viewMode, true);
   };
 
   // Chatbot removed: AI command processing disabled
@@ -179,23 +196,7 @@ const App: React.FC = () => {
         
         <main className="flex-1 overflow-y-auto p-4 lg:p-8">
           <div className="space-y-8">
-            {/* Hero */}
-            <section className="card hero-bg p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex-1">
-                <h1 className="text-2xl md:text-3xl font-bold">Smart Stock — fast, clear inventory for teams</h1>
-                <p className="mt-2 text-sm muted">Track stock, get alerts, and make smarter purchasing decisions with simple tools and realtime sync.</p>
-                <div className="mt-4 flex items-center space-x-3">
-                  <button onClick={() => { setEditingProduct(undefined); setIsModalOpen(true); }} className="px-4 py-2 rounded-2xl bg-linear-to-r from-indigo-600 to-cyan-500 text-white font-semibold">Add Product</button>
-                  <button onClick={() => refreshInventory()} className="px-4 py-2 rounded-2xl border border-slate-100 bg-white text-slate-700">Refresh</button>
-                </div>
-              </div>
-
-              <div className="w-full md:w-72 bg-white card p-4 text-center">
-                <div className="text-sm muted">Total Products</div>
-                <div className="text-2xl font-extrabold mt-2">{products.length}</div>
-                <div className="text-xs muted mt-1">Updated live</div>
-              </div>
-            </section>
+            
 
             <StatsCards products={products} />
             
@@ -205,6 +206,9 @@ const App: React.FC = () => {
                   products={filteredProducts} 
                   onEdit={(p) => { setEditingProduct(p); setIsModalOpen(true); }}
                   onDelete={requestDeleteProduct}
+                  onRestore={handleRestoreProduct}
+                  viewMode={viewMode}
+                  onChangeView={(v) => setViewMode(v)}
                   onCheck={handleCheckProduct}
                   loading={loading}
                 />
