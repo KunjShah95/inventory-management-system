@@ -92,15 +92,6 @@ const InventoryTable: React.FC<InventoryTableProps> = ({ products, onEdit, onDel
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end space-x-1 opacity-100 transition-opacity">
-                      <button
-                        type="button"
-                        onClick={() => onCheck && onCheck(product)}
-                        className="p-2 text-slate-700 hover:text-slate-900 bg-transparent rounded-lg border border-transparent hover:border-slate-200 shadow-none hover:shadow-sm transition-all"
-                        aria-label={`Check ${product.product_name}`}
-                        title={`Check ${product.product_name}`}
-                      >
-                        <i className="fas fa-check"></i>
-                      </button>
                       <button 
                         type="button"
                         onClick={() => onEdit(product)}
