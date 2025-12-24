@@ -9,6 +9,8 @@ import InventoryTable from './components/InventoryTable';
 import ProductModal from './components/ProductModal';
 import SetupScreen from './components/SetupScreen';
 import ActivityFeed from './components/ActivityFeed';
+import ConfirmDialog from './components/ConfirmDialog';
+import Alert from './components/Alert';
 
 interface Activity {
   id: string;
@@ -54,7 +56,7 @@ const App: React.FC = () => {
       setProducts(data);
     } catch (err: any) {
       console.error(err.message);
-      alert(`Error fetching inventory: ${err.message}`);
+      showAlert(`Error fetching inventory: ${err.message}`);
     } finally {
       if (!quiet) setLoading(false);
     }
@@ -67,7 +69,7 @@ const App: React.FC = () => {
   const handleSaveProduct = async (data: Partial<Product>) => {
     if (!supabase) return;
     if (data.quantity == null || data.quantity < 1) {
-      alert('Please enter a quantity of at least 1 before saving.');
+      showAlert('Please enter a quantity of at least 1 before saving.');
       return;
     }
     try {
@@ -85,19 +87,49 @@ const App: React.FC = () => {
       setIsModalOpen(false);
       setEditingProduct(undefined);
     } catch (err: any) {
-      alert('Error saving product: ' + err.message);
+      showAlert('Error saving product: ' + err.message);
     }
   };
 
-  const handleDeleteProduct = async (name: string) => {
-    if (!supabase || !window.confirm(`Delete ${name} from inventory?`)) return;
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteName, setPendingDeleteName] = useState<string | null>(null);
+
+  const requestDeleteProduct = (name: string) => {
+    setPendingDeleteName(name);
+    setConfirmOpen(true);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    const name = pendingDeleteName;
+    setConfirmOpen(false);
+    setPendingDeleteName(null);
+    if (!supabase || !name) return;
     try {
       await supabase.deleteProduct(name);
       addActivity('delete', `Deleted product: ${name}`);
       refreshInventory(true);
     } catch (err: any) {
-      alert('Error deleting product: ' + err.message);
+      showAlert('Error deleting product: ' + err.message);
     }
+  };
+
+  // App-level alert state
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+
+  const showAlert = (msg: string) => {
+    setAlertMessage(msg);
+    setAlertOpen(true);
+  };
+
+  const closeAlert = () => {
+    setAlertOpen(false);
+    setAlertMessage('');
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmOpen(false);
+    setPendingDeleteName(null);
   };
 
   const handleCheckProduct = (product: Product) => {
@@ -172,7 +204,7 @@ const App: React.FC = () => {
                 <InventoryTable 
                   products={filteredProducts} 
                   onEdit={(p) => { setEditingProduct(p); setIsModalOpen(true); }}
-                  onDelete={handleDeleteProduct}
+                  onDelete={requestDeleteProduct}
                   onCheck={handleCheckProduct}
                   loading={loading}
                 />
@@ -190,6 +222,14 @@ const App: React.FC = () => {
         onSave={handleSaveProduct}
         product={editingProduct}
       />
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        title="Delete Product"
+        message={pendingDeleteName ? `Are you sure you want to delete ${pendingDeleteName}?` : 'Are you sure you want to delete this product?'}
+        onConfirm={handleDeleteConfirmed}
+        onCancel={handleCancelDelete}
+      />
+      <Alert isOpen={alertOpen} message={alertMessage} onClose={closeAlert} />
     </div>
   );
 };
