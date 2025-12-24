@@ -91,11 +91,11 @@ const InventoryTable: React.FC<InventoryTableProps> = ({ products, onEdit, onDel
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end space-x-1 opacity-100 transition-opacity">
                       <button
                         type="button"
                         onClick={() => onCheck && onCheck(product)}
-                        className="p-2 text-slate-400 hover:text-slate-800 hover:bg-white rounded-lg border border-transparent hover:border-slate-200 shadow-none hover:shadow-sm transition-all"
+                        className="p-2 text-slate-700 hover:text-slate-900 bg-transparent rounded-lg border border-transparent hover:border-slate-200 shadow-none hover:shadow-sm transition-all"
                         aria-label={`Check ${product.product_name}`}
                         title={`Check ${product.product_name}`}
                       >
@@ -104,7 +104,7 @@ const InventoryTable: React.FC<InventoryTableProps> = ({ products, onEdit, onDel
                       <button 
                         type="button"
                         onClick={() => onEdit(product)}
-                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg border border-transparent hover:border-slate-200 shadow-none hover:shadow-sm transition-all"
+                        className="p-2 text-slate-700 hover:text-indigo-600 bg-transparent rounded-lg border border-transparent hover:border-slate-200 shadow-none hover:shadow-sm transition-all"
                         aria-label={`Edit ${product.product_name}`}
                         title={`Edit ${product.product_name}`}
                       >
@@ -113,7 +113,7 @@ const InventoryTable: React.FC<InventoryTableProps> = ({ products, onEdit, onDel
                       <button 
                         type="button"
                         onClick={() => onDelete(product.product_name)}
-                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-white rounded-lg border border-transparent hover:border-slate-200 shadow-none hover:shadow-sm transition-all"
+                        className="p-2 text-slate-700 hover:text-rose-600 bg-transparent rounded-lg border border-transparent hover:border-slate-200 shadow-none hover:shadow-sm transition-all"
                         aria-label={`Delete ${product.product_name}`}
                         title={`Delete ${product.product_name}`}
                       >
