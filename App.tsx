@@ -8,7 +8,6 @@ import StatsCards from './components/StatsCards';
 import InventoryTable from './components/InventoryTable';
 import ProductModal from './components/ProductModal';
 import SetupScreen from './components/SetupScreen';
-import ActivityFeed from './components/ActivityFeed';
 import ConfirmDialog from './components/ConfirmDialog';
 import Alert from './components/Alert';
 
@@ -94,6 +93,50 @@ const App: React.FC = () => {
       setEditingProduct(undefined);
     } catch (err: any) {
       showAlert('Error saving product: ' + err.message);
+    }
+  };
+
+  const handleBulkSaveProducts = async (rows: Partial<Product>[]) => {
+    if (!supabase) return;
+    setLoading(true);
+    try {
+      for (const r of rows) {
+        const name = (r.product_name || '').trim();
+        if (!name) continue;
+        // If product exists in current inventory, update; otherwise create
+        const existing = products.find(p => p.product_name.toLowerCase() === name.toLowerCase());
+        try {
+          if (existing) {
+            await supabase.updateProduct(existing.product_name, {
+              quantity: r.quantity != null ? r.quantity : existing.quantity,
+              cost: r.cost != null ? r.cost : existing.cost
+            });
+            addActivity('update', `Bulk updated ${existing.product_name}`);
+          } else {
+            await supabase.createProduct({
+              product_id: r.product_id || Math.random().toString(36).substring(2, 11),
+              product_name: name,
+              quantity: r.quantity != null ? r.quantity : 1,
+              cost: r.cost != null ? r.cost : 0
+            });
+            addActivity('create', `Bulk added ${name}`);
+          }
+        } catch (err: any) {
+          // If create failed due to conflict or missing schema differences, attempt update as fallback
+          try {
+            if (!existing) {
+              await supabase.updateProduct(name, { quantity: r.quantity, cost: r.cost });
+              addActivity('update', `Bulk patched ${name}`);
+            }
+          } catch (err2: any) {
+            console.error('Failed to save row', name, err2);
+            addActivity('delete', `Failed to save ${name}: ${err2?.message || err2}`);
+          }
+        }
+      }
+      refreshInventory(viewMode, true);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -212,7 +255,7 @@ const App: React.FC = () => {
                   onCheck={handleCheckProduct}
                   loading={loading}
                 />
-                <ActivityFeed activities={activities} />
+                
               </div>
               
             </div>
@@ -224,6 +267,7 @@ const App: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveProduct}
+        onBulkSave={handleBulkSaveProducts}
         product={editingProduct}
       />
       <ConfirmDialog
