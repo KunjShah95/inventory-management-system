@@ -107,107 +107,80 @@ export class SupabaseService {
   }
 
   async createProduct(product: Partial<Product>): Promise<Product> {
-    // Ensure we send both possible column names so DB captures the value regardless of schema
     const payload: any = { ...product };
-    // Enforce minimum quantity of 1
     if (payload.quantity == null || payload.quantity < 1) payload.quantity = 1;
-    // ensure newly created products are active by default
     if (payload.isActive == null) payload.isActive = true;
-      // Send only the properties supplied by the caller. Avoid mirroring to alternative column
-      // names (like `price`/`unit_price`) — some schemas don't have those columns and will error.
-      const tryRequest = async (body: any) => {
-        // Prefer inserting into base `products` table. Only fallback to `active_products`
-        // for unusual setups where the view accepts writes.
-        let response = await fetch(`${this.config.url}/rest/v1/products`, {
-          method: 'POST',
-          headers: this.headers,
-          body: JSON.stringify(body)
-        });
-        if (!response.ok) {
-          // fall back to active_products view if available
-          response = await fetch(`${this.config.url}/rest/v1/active_products`, {
-            method: 'POST',
-            headers: this.headers,
-            body: JSON.stringify(body)
-          });
-        }
-        if (!response.ok) {
-          const err = await response.json().catch(() => ({ message: response.statusText }));
-          return { ok: false, error: err };
-        }
-        const data = await response.json();
-        return { ok: true, data };
-      };
 
-      // First attempt
-      let res = await tryRequest(payload);
-      if (!res.ok) {
-        const msg = (res.error && (res.error.message || JSON.stringify(res.error))).toString();
-        // If server complains about a missing column, strip unknown fields and retry once.
-        if (/Could not find the '\\w+' column|column .* does not exist|missing column/i.test(msg)) {
-          const cleaned = { ...payload };
-          // remove alternative price fields which may not exist
-          delete cleaned.price;
-          delete cleaned.unit_price;
-          // also remove isActive if the DB does not have that column
-          if (/isActive/i.test(msg) || /'isActive'/.test(msg)) delete cleaned.isActive;
-          res = await tryRequest(cleaned);
-        }
+    // Insert directly into base table; avoid hitting views that may not expose all columns
+    const tryRequest = async (body: any) => {
+      const response = await fetch(`${this.config.url}/rest/v1/products`, {
+        method: 'POST',
+        headers: this.headers,
+        body: JSON.stringify(body)
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ message: response.statusText }));
+        return { ok: false, error: err };
       }
+      const data = await response.json();
+      return { ok: true, data };
+    };
 
-      if (!res.ok) {
-        const err = res.error || { message: 'Unknown error' };
-        throw new Error(`Failed to create product: ${err.message || JSON.stringify(err)}`);
+    let res = await tryRequest(payload);
+    if (!res.ok) {
+      const msg = (res.error && (res.error.message || JSON.stringify(res.error))).toString();
+      // If the DB schema lacks certain columns (e.g., isActive), strip them and retry once
+      if (/Could not find the '\\w+' column|column .* does not exist|missing column/i.test(msg)) {
+        const cleaned = { ...payload };
+        delete cleaned.price;
+        delete cleaned.unit_price;
+        if (/isActive/i.test(msg) || /'isActive'/.test(msg)) delete cleaned.isActive;
+        res = await tryRequest(cleaned);
       }
-      return res.data[0];
+    }
+
+    if (!res.ok) {
+      const err = res.error || { message: 'Unknown error' };
+      throw new Error(`Failed to create product: ${err.message || JSON.stringify(err)}`);
+    }
+    return res.data[0];
   }
 
   async updateProduct(name: string, updates: Partial<Product>): Promise<Product> {
-    // Mirror cost/price fields to increase chance DB column is updated regardless of naming
     const payload: any = { ...updates };
-    // Enforce minimum quantity of 1 when updating
     if (payload.quantity != null && payload.quantity < 1) payload.quantity = 1;
-      // Send only the provided update fields and avoid mirroring to alternative column names
-      const tryRequest = async (body: any) => {
-        // Prefer patching the base `products` table. Avoid patching views by default.
-        let response = await fetch(`${this.config.url}/rest/v1/products?product_name=eq.${encodeURIComponent(name)}`, {
-          method: 'PATCH',
-          headers: this.headers,
-          body: JSON.stringify(body)
-        });
-        if (!response.ok) {
-          // as a last resort, try the view (not recommended for most setups)
-          response = await fetch(`${this.config.url}/rest/v1/active_products?product_name=eq.${encodeURIComponent(name)}`, {
-            method: 'PATCH',
-            headers: this.headers,
-            body: JSON.stringify(body)
-          });
-        }
-        if (!response.ok) {
-          const err = await response.json().catch(() => ({ message: response.statusText }));
-          return { ok: false, error: err };
-        }
-        const data = await response.json();
-        return { ok: true, data };
-      };
 
-      let res = await tryRequest(payload);
-      if (!res.ok) {
-        const msg = (res.error && (res.error.message || JSON.stringify(res.error))).toString();
-        if (/Could not find the '\\w+' column|column .* does not exist|missing column/i.test(msg)) {
-          const cleaned = { ...payload };
-          delete cleaned.price;
-          delete cleaned.unit_price;
-          if (/isActive/i.test(msg) || /'isActive'/.test(msg)) delete cleaned.isActive;
-          res = await tryRequest(cleaned);
-        }
+    const tryRequest = async (body: any) => {
+      const response = await fetch(`${this.config.url}/rest/v1/products?product_name=eq.${encodeURIComponent(name)}`, {
+        method: 'PATCH',
+        headers: this.headers,
+        body: JSON.stringify(body)
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ message: response.statusText }));
+        return { ok: false, error: err };
       }
+      const data = await response.json();
+      return { ok: true, data };
+    };
 
-      if (!res.ok) {
-        const err = res.error || { message: 'Unknown error' };
-        throw new Error(`Failed to update product: ${err.message || JSON.stringify(err)}`);
+    let res = await tryRequest(payload);
+    if (!res.ok) {
+      const msg = (res.error && (res.error.message || JSON.stringify(res.error))).toString();
+      if (/Could not find the '\\w+' column|column .* does not exist|missing column/i.test(msg)) {
+        const cleaned = { ...payload };
+        delete cleaned.price;
+        delete cleaned.unit_price;
+        if (/isActive/i.test(msg) || /'isActive'/.test(msg)) delete cleaned.isActive;
+        res = await tryRequest(cleaned);
       }
-      return res.data[0];
+    }
+
+    if (!res.ok) {
+      const err = res.error || { message: 'Unknown error' };
+      throw new Error(`Failed to update product: ${err.message || JSON.stringify(err)}`);
+    }
+    return res.data[0];
   }
 
   // Soft delete: mark isActive = false
