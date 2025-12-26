@@ -3,12 +3,13 @@ import React from 'react';
 interface HeaderProps {
   onAddClick: () => void;
   onBuyClick?: () => void;
+  onExportClick?: () => void;
   onSearchChange: (query: string) => void;
   onRefresh: () => void;
   loading: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ onAddClick, onBuyClick, onSearchChange, onRefresh, loading }) => {
+const Header: React.FC<HeaderProps> = ({ onAddClick, onBuyClick, onExportClick, onSearchChange, onRefresh, loading }) => {
   return (
     <header className="sticky top-0 z-50 glass border-b border-slate-200/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

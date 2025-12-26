@@ -103,45 +103,63 @@ const App: React.FC = () => {
     if (!supabase) return;
     setLoading(true);
     try {
-      for (const r of rows) {
+      const toUpsert = rows.map(r => {
         const name = (r.product_name || '').trim();
-        if (!name) continue;
-        
-        // If product exists in current inventory, update; otherwise create
         const existing = products.find(p => p.product_name.toLowerCase() === name.toLowerCase());
-        
-        try {
-          if (existing) {
-            await supabase.updateProduct(existing.product_name, {
-              quantity: r.quantity != null ? r.quantity : existing.quantity,
-              cost: r.cost != null ? r.cost : existing.cost
-            });
-            addActivity('update', `Bulk updated ${existing.product_name}`);
-          } else {
-            await supabase.createProduct({
-              product_id: r.product_id || Math.random().toString(36).substring(2, 11),
-              product_name: name,
-              quantity: r.quantity != null ? r.quantity : 1,
-              cost: r.cost != null ? r.cost : 0
-            });
-            addActivity('create', `Bulk added ${name}`);
-          }
-        } catch (err: any) {
-          // If create failed due to conflict or missing schema differences, attempt update as fallback
-          try {
-            if (!existing) {
-              await supabase.updateProduct(name, { quantity: r.quantity, cost: r.cost });
-              addActivity('update', `Bulk patched ${name}`);
-            }
-          } catch (err2: any) {
-            console.error('Failed to save row', name, err2);
-            addActivity('delete', `Failed to save ${name}: ${err2?.message || err2}`);
-          }
-        }
-      }
+        return {
+          product_id: existing?.product_id || r.product_id || Math.random().toString(36).substring(2, 11),
+          product_name: name,
+          quantity: r.quantity ?? existing?.quantity ?? 1,
+          cost: r.cost ?? existing?.cost ?? 0,
+          isActive: true
+        };
+      }).filter(p => p.product_name);
+
+      await supabase.bulkUpsertProducts(toUpsert);
+      addActivity('create', `Bulk uploaded ${toUpsert.length} products`);
       refreshInventory(viewMode, true);
+    } catch (err: any) {
+      showAlert('Error during bulk upload: ' + err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExportExcel = async () => {
+    if (products.length === 0) {
+      showAlert('No products to export');
+      return;
+    }
+
+    try {
+      // Load XLSX from CDN if not present
+      if (!(window as any).XLSX) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js';
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      }
+      const XLSX = (window as any).XLSX;
+      
+      const data = products.map(p => ({
+        'Product ID': p.product_id,
+        'Product Name': p.product_name,
+        'Quantity': p.quantity,
+        'Cost (₹)': p.cost,
+        'Status': p.isActive ? 'Active' : 'Inactive'
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
+      XLSX.writeFile(wb, `inventory_export_${new Date().toISOString().split('T')[0]}.xlsx`);
+      
+      addActivity('check', 'Exported inventory to Excel');
+    } catch (err: any) {
+      showAlert('Error exporting Excel: ' + err.message);
     }
   };
 
@@ -238,6 +256,7 @@ const App: React.FC = () => {
         <Header 
           onAddClick={() => { setEditingProduct(undefined); setIsModalOpen(true); }} 
           onBuyClick={() => setIsUploadOpen(true)}
+          onExportClick={handleExportExcel}
           onSearchChange={setSearchQuery}
           onRefresh={() => refreshInventory()}
           loading={loading}

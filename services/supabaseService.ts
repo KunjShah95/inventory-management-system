@@ -88,6 +88,24 @@ export class SupabaseService {
     return normalized;
   }
 
+  async bulkUpsertProducts(products: Partial<Product>[]): Promise<void> {
+    if (products.length === 0) return;
+
+    const response = await fetch(`${this.config.url}/rest/v1/products`, {
+      method: 'POST',
+      headers: {
+        ...this.headers,
+        'Prefer': 'resolution=merge-duplicates,return=minimal'
+      },
+      body: JSON.stringify(products)
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(`Failed to bulk upsert products: ${error.message || response.statusText}`);
+    }
+  }
+
   async createProduct(product: Partial<Product>): Promise<Product> {
     // Ensure we send both possible column names so DB captures the value regardless of schema
     const payload: any = { ...product };

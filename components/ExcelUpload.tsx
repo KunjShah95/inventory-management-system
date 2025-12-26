@@ -18,12 +18,22 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, onBulkSave }
     if (!file) return;
     setProcessing(true);
     try {
-      const XLSX = await import('xlsx');
+      // Load XLSX from CDN to keep bundle size small
+      if (!(window as any).XLSX) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js';
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      }
+      const XLSX = (window as any).XLSX;
       const ab = await file.arrayBuffer();
       const wb = XLSX.read(ab, { type: 'array' });
       const sheet = wb.Sheets[wb.SheetNames[0]];
       const json: any[] = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-      const rows: Partial<Product>[] = json.map(r => ({
+      const rows: Partial<Product>[] = json.map((r: any) => ({
         product_name: String(r['product_name'] || r['Product Name'] || r['name'] || '').trim(),
         quantity: Number(r['quantity'] ?? r['Quantity'] ?? r['qty'] ?? 0) || 0,
         cost: parseFloat(String(r['cost'] ?? r['Cost'] ?? r['price'] ?? r['unit_price'] ?? 0)) || 0

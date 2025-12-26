@@ -17,13 +17,18 @@ export default defineConfig(({ mode }) => {
     build: {
       rollupOptions: {
         output: {
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom'],
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('react')) return 'vendor-react';
+              return 'vendor';
+            }
           },
         },
       },
-      chunkSizeWarningLimit: 1000,
+      chunkSizeWarningLimit: 600,
       minify: 'esbuild',
+      reportCompressedSize: false,
+      cssCodeSplit: true,
       sourcemap: false,
     },
     define: {
