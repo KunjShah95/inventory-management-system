@@ -5,6 +5,7 @@ interface InventoryTableProps {
   products: Product[];
   onDelete: (name: string) => void;
   onRestore?: (name: string) => void;
+  onEdit?: (product: Product) => void;
   viewMode: 'active' | 'inactive' | 'all';
   onChangeView: (v: 'active' | 'inactive' | 'all') => void;
   loading: boolean;
@@ -14,6 +15,7 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
   products,
   onDelete,
   onRestore,
+  onEdit,
   viewMode,
   onChangeView,
   loading
@@ -193,6 +195,15 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
                     </td>
                     <td className="px-4 sm:px-6 py-4">
                       <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => onEdit && onEdit(product)}
+                          className="btn btn-ghost p-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-all"
+                          aria-label={`View/Edit ${product.product_name}`}
+                          title="View/Edit"
+                        >
+                          <i className="fas fa-pen text-sm"></i>
+                        </button>
+
                         {active ? (
                           <button
                             onClick={() => onDelete(product.product_name)}

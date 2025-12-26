@@ -35,6 +35,7 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | undefined>();
+  const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('create');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -162,6 +163,52 @@ const App: React.FC = () => {
     }
   };
 
+  const handleExportPDF = async () => {
+    if (products.length === 0) {
+      showAlert('No products to export');
+      return;
+    }
+
+    try {
+      if (!(window as any).jspdf) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      }
+      const { jsPDF } = (window as any).jspdf || (window as any).jspdf || (window as any).jspdf || (window as any).jspdf;
+      const doc = new (window as any).jspdf.jsPDF();
+      doc.setFontSize(14);
+      doc.text('Inventory Export', 14, 20);
+      doc.setFontSize(10);
+      const startY = 30;
+      products.forEach((p, i) => {
+        const y = startY + i * 8;
+        if (y > 280) {
+          doc.addPage();
+        }
+        doc.text(`${i + 1}. ${p.product_name} — Qty: ${p.quantity} — Cost: ₹${p.cost}`, 14, y);
+      });
+      doc.save(`inventory_export_${new Date().toISOString().split('T')[0]}.pdf`);
+      addActivity('check', 'Exported inventory to PDF');
+    } catch (err: any) {
+      showAlert('Error exporting PDF: ' + (err?.message || err));
+    }
+  };
+
+  const handleExport = async () => {
+    // Ask user for choice: OK = PDF, Cancel = Excel
+    const asPdf = window.confirm('Export as PDF? Click OK for PDF, Cancel for Excel');
+    if (asPdf) {
+      await handleExportPDF();
+    } else {
+      await handleExportExcel();
+    }
+  };
+
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDeleteName, setPendingDeleteName] = useState<string | null>(null);
 
@@ -247,9 +294,9 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-slate-50/50">
       <div className="flex flex-col min-h-screen">
         <Header 
-          onAddClick={() => { setEditingProduct(undefined); setIsModalOpen(true); }} 
+          onAddClick={() => { setEditingProduct(undefined); setModalMode('create'); setIsModalOpen(true); }} 
           onBuyClick={() => setIsUploadOpen(true)}
-          onExportClick={handleExportExcel}
+          onExportClick={handleExport}
           onSearchChange={setSearchQuery}
           onRefresh={() => refreshInventory()}
           loading={loading}
@@ -265,6 +312,7 @@ const App: React.FC = () => {
                   products={filteredProducts} 
                   onDelete={requestDeleteProduct}
                   onRestore={handleRestoreProduct}
+                  onEdit={(p) => { setEditingProduct(p); setModalMode('edit'); setIsModalOpen(true); }}
                   viewMode={viewMode}
                   onChangeView={(v) => setViewMode(v)}
                   loading={loading}
@@ -279,9 +327,10 @@ const App: React.FC = () => {
       <React.Suspense fallback={null}>
         <ProductModal 
           isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => { setIsModalOpen(false); setEditingProduct(undefined); }}
           onSave={handleSaveProduct}
           product={editingProduct}
+          mode={modalMode}
         />
 
         <ExcelUpload

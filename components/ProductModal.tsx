@@ -6,9 +6,10 @@ interface ProductModalProps {
   onClose: () => void;
   onSave: (data: Partial<Product>) => void;
   product?: Product;
+  mode?: 'create' | 'edit' | 'view';
 }
 
-const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, product }) => {
+const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, product, mode }) => {
   const [formData, setFormData] = useState<Partial<Product>>({
     product_name: '',
     quantity: 1,
@@ -28,13 +29,16 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
     if (product) {
       setFormData(product);
     } else {
-      setFormData({ product_name: '', quantity: 1, cost: 0 });
+      setFormData({ product_name: '', quantity: 1, cost: 1 });
     }
     setQuantityError(null);
     setCostError(null);
   }, [product, isOpen]);
 
   if (!isOpen) return null;
+
+  const currentMode = mode || (product ? 'edit' : 'create');
+  const headerTitle = currentMode === 'view' ? 'View Product' : (product ? 'Edit Product' : 'Add New Product');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +71,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                 <i className={`fas ${product ? 'fa-pen' : 'fa-plus'} text-white text-lg`}></i>
               </div>
               <h2 className="text-xl font-bold text-white">
-                {product ? 'Edit Product' : 'Add New Product'}
+                {headerTitle}
               </h2>
             </div>
             <button
@@ -93,6 +97,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
               type="text"
               value={formData.product_name}
               onChange={(e) => setFormData({ ...formData, product_name: e.target.value })}
+              disabled={currentMode === 'view'}
               className="input"
               placeholder="e.g., iPhone 15 Pro Max"
             />
@@ -174,7 +179,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
               }`}
             >
               <i className={`fas ${product ? 'fa-check' : 'fa-plus'} mr-2`}></i>
-              {product ? 'Update' : 'Add Product'}
+              {currentMode === 'view' ? 'Update Stock' : (product ? 'Update' : 'Add Product')}
             </button>
           </div>
         </form>
