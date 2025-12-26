@@ -73,8 +73,38 @@ const App: React.FC = () => {
     refreshInventory(viewMode, true);
   }, [viewMode, refreshInventory]);
 
+  const toFriendlySaveError = (rawMessage: string) => {
+    const msg = (rawMessage || '').toLowerCase();
+    if (/duplicate key value|unique constraint/.test(msg)) {
+      return 'Product name already exists. Please choose another name.';
+    }
+    if (/could not find the 'isactive' column|column .*isactive|isactive" column|isactive/.test(msg)) {
+      return 'Database schema is missing the isActive column. Please run the isActive migration.';
+    }
+    if (/failed to fetch|network error|network connection/.test(msg)) {
+      return 'Network error while saving. Please check your connection and try again.';
+    }
+    if (/permission denied|not authorized|access denied/.test(msg)) {
+      return 'You do not have permission to save products. Check your Supabase credentials.';
+    }
+    if (/timeout/.test(msg)) {
+      return 'Request timed out while saving. Please try again.';
+    }
+    return rawMessage || 'Something went wrong while saving the product.';
+  };
+
   const handleSaveProduct = async (data: Partial<Product>) => {
     if (!supabase) return;
+    const name = (data.product_name || '').trim();
+    if (!name) {
+      showAlert('Please enter a product name.');
+      return;
+    }
+    // Prevent creating duplicate product names (case-insensitive)
+    if (!editingProduct && products.some(p => p.product_name.trim().toLowerCase() === name.toLowerCase())) {
+      showAlert('Product name already exists. Please choose another name.');
+      return;
+    }
     if (data.quantity == null || data.quantity < 1) {
       showAlert('Please enter a quantity of at least 1 before saving.');
       return;
@@ -82,11 +112,12 @@ const App: React.FC = () => {
     
     try {
       if (editingProduct) {
-        await supabase.updateProduct(editingProduct.product_name, data);
+        await supabase.updateProduct(editingProduct.product_name, { ...data, product_name: name });
         addActivity('update', `Manually updated ${editingProduct.product_name}`);
       } else {
         await supabase.createProduct({
           ...data,
+          product_name: name,
           product_id: Math.random().toString(36).substring(2, 11)
         });
         addActivity('create', `Manually added ${data.product_name}`);
@@ -95,7 +126,8 @@ const App: React.FC = () => {
       setIsModalOpen(false);
       setEditingProduct(undefined);
     } catch (err: any) {
-      showAlert('Error saving product: ' + err.message);
+      const raw = (err?.message || '').toString();
+      showAlert(toFriendlySaveError(raw));
     }
   };
 
