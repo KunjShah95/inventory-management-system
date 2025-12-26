@@ -66,6 +66,17 @@ const Header: React.FC<HeaderProps> = ({ onAddClick, onBuyClick, onExportClick, 
             </button>
 
             <button
+              onClick={onExportClick}
+              disabled={!onExportClick}
+              className="btn btn-ghost p-2 sm:px-4 sm:py-2.5 rounded-lg hidden sm:flex border border-slate-200"
+              aria-label="Export Excel"
+              title="Export to Excel"
+            >
+              <i className="fas fa-file-export text-sm text-slate-600"></i>
+              <span className="text-sm font-semibold text-slate-600">Export</span>
+            </button>
+
+            <button
               onClick={onAddClick}
               className="btn btn-primary px-3 py-2.5 sm:px-4 rounded-lg shadow-md hover:shadow-lg"
               aria-label="Add Product"

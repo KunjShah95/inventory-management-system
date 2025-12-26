@@ -35,8 +35,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, onBulkSave }
       const json: any[] = XLSX.utils.sheet_to_json(sheet, { defval: '' });
       const rows: Partial<Product>[] = json.map((r: any) => ({
         product_name: String(r['product_name'] || r['Product Name'] || r['name'] || '').trim(),
-        quantity: Number(r['quantity'] ?? r['Quantity'] ?? r['qty'] ?? 0) || 0,
-        cost: parseFloat(String(r['cost'] ?? r['Cost'] ?? r['price'] ?? r['unit_price'] ?? 0)) || 0
+        quantity: Number(r['quantity'] ?? r['Quantity'] ?? r['qty'] ?? 1) || 1,
+        cost: parseFloat(String(r['cost'] ?? r['Cost'] ?? r['price'] ?? r['unit_price'] ?? 1)) || 1
       }));
       setPreviewRows(rows);
     } catch (err) {
@@ -53,6 +53,14 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, onBulkSave }
 
   const handleBulkSave = async () => {
     if (!onBulkSave) return;
+
+    // Validate rows before saving
+    const invalidRows = previewRows.filter(r => !r.product_name || (r.quantity || 0) < 1 || (r.cost || 0) < 1);
+    if (invalidRows.length > 0) {
+      alert(`Please fix ${invalidRows.length} invalid rows. All products must have a name, quantity >= 1, and cost >= 1.`);
+      return;
+    }
+
     setConfirmOpen(false);
     try {
       await onBulkSave(previewRows);
@@ -99,6 +107,29 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, onBulkSave }
                 <p className="text-sm text-slate-500">
                   Supported formats: .xlsx, .xls, .csv
                 </p>
+                <button
+                  onClick={async () => {
+                    if (!(window as any).XLSX) {
+                      await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = 'https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js';
+                        script.onload = resolve;
+                        script.onerror = reject;
+                        document.head.appendChild(script);
+                      });
+                    }
+                    const XLSX = (window as any).XLSX;
+                    const ws = XLSX.utils.json_to_sheet([
+                      { product_name: 'Sample Product', quantity: 10, cost: 150.00 }
+                    ]);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, 'Template');
+                    XLSX.writeFile(wb, 'inventory_template.xlsx');
+                  }}
+                  className="mt-2 text-xs text-blue-600 hover:underline font-medium"
+                >
+                  Download Template
+                </button>
               </div>
               <input
                 type="file"
@@ -156,22 +187,22 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, onBulkSave }
                             <td className="px-4 py-3">
                               <input
                                 type="number"
-                                min="0"
+                                min="1"
                                 value={row.quantity ?? ''}
-                                onChange={(e) => updateRow(i, { quantity: parseInt(e.target.value) || 0 })}
+                                onChange={(e) => updateRow(i, { quantity: parseInt(e.target.value) || 1 })}
                                 className="input py-1.5 text-sm w-24"
-                                placeholder="0"
+                                placeholder="1"
                               />
                             </td>
                             <td className="px-4 py-3">
                               <input
                                 type="number"
                                 step="0.01"
-                                min="0"
+                                min="1"
                                 value={row.cost ?? ''}
-                                onChange={(e) => updateRow(i, { cost: parseFloat(e.target.value) || 0 })}
+                                onChange={(e) => updateRow(i, { cost: parseFloat(e.target.value) || 1 })}
                                 className="input py-1.5 text-sm w-32"
-                                placeholder="0.00"
+                                placeholder="1.00"
                               />
                             </td>
                           </tr>

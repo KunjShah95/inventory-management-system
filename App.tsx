@@ -5,7 +5,6 @@ import { SupabaseService } from './services/supabaseService';
 import Header from './components/Header';
 import StatsCards from './components/StatsCards';
 import InventoryTable from './components/InventoryTable';
-import ActivityFeed from './components/ActivityFeed';
 
 const ExcelUpload = React.lazy(() => import('./components/ExcelUpload'));
 const ProductModal = React.lazy(() => import('./components/ProductModal'));
@@ -215,12 +214,6 @@ const App: React.FC = () => {
     setPendingDeleteName(null);
   };
 
-  const handleCheckProduct = (product: Product) => {
-    // Minimal check action: record activity and refresh inventory (no quantity change)
-    addActivity('check', `Checked inventory for ${product.product_name}`);
-    refreshInventory(viewMode, true);
-  };
-
   // Chatbot removed: AI command processing disabled
 
   if (!config) {
@@ -267,21 +260,17 @@ const App: React.FC = () => {
             <StatsCards products={products} />
             
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-              <div className="lg:col-span-3">
+              <div className="lg:col-span-4">
                 <InventoryTable 
                   products={filteredProducts} 
-                  onEdit={(p) => { setEditingProduct(p); setIsModalOpen(true); }}
                   onDelete={requestDeleteProduct}
                   onRestore={handleRestoreProduct}
                   viewMode={viewMode}
                   onChangeView={(v) => setViewMode(v)}
-                  onCheck={handleCheckProduct}
                   loading={loading}
                 />
               </div>
-              <div className="lg:col-span-1">
-                <ActivityFeed activities={activities} />
-              </div>
+              
             </div>
           </div>
         </main>

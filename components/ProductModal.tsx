@@ -12,9 +12,10 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
   const [formData, setFormData] = useState<Partial<Product>>({
     product_name: '',
     quantity: 1,
-    cost: 0
+    cost: 1
   });
   const [quantityError, setQuantityError] = useState<string | null>(null);
+  const [costError, setCostError] = useState<string | null>(null);
   const nameRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -30,6 +31,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
       setFormData({ product_name: '', quantity: 1, cost: 0 });
     }
     setQuantityError(null);
+    setCostError(null);
   }, [product, isOpen]);
 
   if (!isOpen) return null;
@@ -40,7 +42,12 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
       setQuantityError('Please enter a quantity of at least 1');
       return;
     }
+    if (formData.cost == null || formData.cost < 1) {
+      setCostError('Cost must be at least 1');
+      return;
+    }
     setQuantityError(null);
+    setCostError(null);
     onSave(formData);
   };
 
@@ -124,12 +131,20 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                 required
                 type="number"
                 step="0.01"
-                min="0"
+                min="1"
                 value={formData.cost}
-                onChange={(e) => setFormData({ ...formData, cost: parseFloat(e.target.value) || 0 })}
-                className="input"
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  const cost = Number.isNaN(val) ? 0 : val;
+                  setFormData({ ...formData, cost });
+                  setCostError(cost < 1 ? 'Cost must be at least 1' : null);
+                }}
+                className={`input ${costError ? 'border-red-500 focus:border-red-500' : ''}`}
                 placeholder="0.00"
               />
+              {costError && (
+                <p className="text-xs text-red-600 mt-1 font-medium">{costError}</p>
+              )}
             </div>
           </div>
 
@@ -153,9 +168,9 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
             </button>
             <button
               type="submit"
-              disabled={!!quantityError}
+              disabled={!!quantityError || !!costError}
               className={`btn btn-primary flex-1 py-3 shadow-lg ${
-                quantityError ? 'opacity-50 cursor-not-allowed' : ''
+                (quantityError || costError) ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
               <i className={`fas ${product ? 'fa-check' : 'fa-plus'} mr-2`}></i>

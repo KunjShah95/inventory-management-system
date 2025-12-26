@@ -3,10 +3,8 @@ import { Product } from '../types';
 
 interface InventoryTableProps {
   products: Product[];
-  onEdit: (product: Product) => void;
   onDelete: (name: string) => void;
   onRestore?: (name: string) => void;
-  onCheck?: (product: Product) => void;
   viewMode: 'active' | 'inactive' | 'all';
   onChangeView: (v: 'active' | 'inactive' | 'all') => void;
   loading: boolean;
@@ -14,10 +12,8 @@ interface InventoryTableProps {
 
 const InventoryTable: React.FC<InventoryTableProps> = ({
   products,
-  onEdit,
   onDelete,
   onRestore,
-  onCheck,
   viewMode,
   onChangeView,
   loading
@@ -161,9 +157,6 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
                             {product.product_name}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs text-slate-400 font-mono">
-                              #{product.product_id}
-                            </span>
                             {!active && (
                               <span className="badge badge-danger text-xs px-2 py-0.5">
                                 Inactive
@@ -200,29 +193,6 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
                     </td>
                     <td className="px-4 sm:px-6 py-4">
                       <div className="flex items-center justify-end gap-1">
-                        {active && onCheck && (
-                          <button
-                            onClick={() => onCheck(product)}
-                            className="btn btn-ghost p-2 rounded-lg hover:bg-indigo-50 hover:text-indigo-600 transition-all"
-                            aria-label={`Check ${product.product_name}`}
-                            title="Quick Check"
-                          >
-                            <i className="fas fa-check-double text-sm"></i>
-                          </button>
-                        )}
-                        <button
-                          onClick={() => onEdit(product)}
-                          disabled={!active}
-                          className={`btn p-2 rounded-lg transition-all ${
-                            !active
-                              ? 'opacity-30 cursor-not-allowed'
-                              : 'btn-ghost hover:bg-blue-50 hover:text-blue-600'
-                          }`}
-                          aria-label={`Edit ${product.product_name}`}
-                          title="Edit"
-                        >
-                          <i className="fas fa-pen text-sm"></i>
-                        </button>
                         {active ? (
                           <button
                             onClick={() => onDelete(product.product_name)}
