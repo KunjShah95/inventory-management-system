@@ -1,10 +1,27 @@
-
+``
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Product, SupabaseConfig } from './types';
 import { SupabaseService } from './services/supabaseService';
 
 import Header from './components/Header';
 import StatsCards from './components/StatsCards';
+
+// Placeholder ExcelUpload component added inline because './components/ExcelUpload' was missing.
+// This keeps the app working until the real component file is added.
+const ExcelUpload: React.FC<{ isOpen: boolean; onClose: () => void; onBulkSave: (rows: Partial<Product>[]) => void; }> = ({ isOpen, onClose }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
+      <div className="bg-white rounded p-6 w-full max-w-md">
+        <h3 className="text-lg font-bold mb-2">Excel Upload</h3>
+        <p className="text-sm text-gray-600 mb-4">Placeholder component - original './components/ExcelUpload' is missing.</p>
+        <div className="flex justify-end">
+          <button className="px-4 py-2 bg-slate-600 text-white rounded" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+};
 import InventoryTable from './components/InventoryTable';
 import ProductModal from './components/ProductModal';
 import SetupScreen from './components/SetupScreen';
@@ -35,6 +52,7 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | undefined>();
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const supabase = useMemo(() => config ? new SupabaseService(config) : null, [config]);
@@ -232,6 +250,7 @@ const App: React.FC = () => {
       <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header 
           onAddClick={() => { setEditingProduct(undefined); setIsModalOpen(true); }} 
+          onBuyClick={() => setIsUploadOpen(true)}
           onSearchChange={setSearchQuery}
           onRefresh={() => refreshInventory()}
           loading={loading}
@@ -267,8 +286,13 @@ const App: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveProduct}
-        onBulkSave={handleBulkSaveProducts}
         product={editingProduct}
+      />
+
+      <ExcelUpload
+        isOpen={isUploadOpen}
+        onClose={() => setIsUploadOpen(false)}
+        onBulkSave={handleBulkSaveProducts}
       />
       <ConfirmDialog
         isOpen={confirmOpen}

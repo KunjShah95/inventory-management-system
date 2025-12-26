@@ -3,6 +3,7 @@ import React from 'react';
 
 interface HeaderProps {
   onAddClick: () => void;
+  onBuyClick?: () => void;
   onSearchChange: (query: string) => void;
   onRefresh: () => void;
   loading: boolean;
@@ -36,6 +37,16 @@ const Header: React.FC<HeaderProps> = ({ onAddClick, onSearchChange, onRefresh, 
           >
             <i className="fas fa-plus mr-2"></i>
             Add Product
+          </button>
+          <button
+            type="button"
+            onClick={onBuyClick}
+            className="px-3 py-2 bg-emerald-600 text-white rounded-2xl text-sm font-semibold hover:bg-emerald-700 shadow-sm"
+            aria-label="Buy (Upload)"
+            title="Buy (Upload Excel)"
+          >
+            <i className="fas fa-upload mr-2"></i>
+            Buy
           </button>
         </div>
       </div>
