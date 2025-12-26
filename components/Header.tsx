@@ -3,13 +3,14 @@ import React from 'react';
 interface HeaderProps {
   onAddClick: () => void;
   onBuyClick?: () => void;
-  onExportClick?: () => void;
+  onExportClick?: (format: 'pdf' | 'excel') => void;
   onSearchChange: (query: string) => void;
   onRefresh: () => void;
   loading: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({ onAddClick, onBuyClick, onExportClick, onSearchChange, onRefresh, loading }) => {
+  const [showExportMenu, setShowExportMenu] = React.useState(false);
   return (
     <header className="sticky top-0 z-50 glass border-b border-slate-200/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -65,16 +66,34 @@ const Header: React.FC<HeaderProps> = ({ onAddClick, onBuyClick, onExportClick, 
               <span className="text-sm font-semibold">Upload</span>
             </button>
 
-            <button
-              onClick={onExportClick}
-              disabled={!onExportClick}
-              className="btn btn-ghost p-2 sm:px-4 sm:py-2.5 rounded-lg hidden sm:flex border border-slate-200"
-              aria-label="Export Excel"
-              title="Export to Excel"
-            >
-              <i className="fas fa-file-export text-sm text-slate-600"></i>
-              <span className="text-sm font-semibold text-slate-600">Export</span>
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowExportMenu(s => !s)}
+                disabled={!onExportClick}
+                className="btn btn-ghost p-2 sm:px-4 sm:py-2.5 rounded-lg hidden sm:flex border border-slate-200"
+                aria-label="Export"
+                title="Export"
+              >
+                <i className="fas fa-file-export text-sm text-slate-600"></i>
+                <span className="text-sm font-semibold text-slate-600">Export</span>
+              </button>
+              {showExportMenu && onExportClick && (
+                <div className="absolute right-0 mt-2 w-40 bg-white border border-slate-200 rounded-lg shadow-lg z-50">
+                  <button
+                    className="w-full text-left px-4 py-2 hover:bg-slate-50"
+                    onClick={() => { setShowExportMenu(false); onExportClick('excel'); }}
+                  >
+                    Export Excel
+                  </button>
+                  <button
+                    className="w-full text-left px-4 py-2 hover:bg-slate-50"
+                    onClick={() => { setShowExportMenu(false); onExportClick('pdf'); }}
+                  >
+                    Export PDF
+                  </button>
+                </div>
+              )}
+            </div>
 
             <button
               onClick={onAddClick}

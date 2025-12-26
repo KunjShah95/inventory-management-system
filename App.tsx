@@ -296,7 +296,7 @@ const App: React.FC = () => {
         <Header 
           onAddClick={() => { setEditingProduct(undefined); setModalMode('create'); setIsModalOpen(true); }} 
           onBuyClick={() => setIsUploadOpen(true)}
-          onExportClick={handleExport}
+          onExportClick={(format) => { if (format === 'pdf') { handleExportPDF(); } else { handleExportExcel(); } }}
           onSearchChange={setSearchQuery}
           onRefresh={() => refreshInventory()}
           loading={loading}
