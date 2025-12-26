@@ -1,27 +1,10 @@
-``
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Product, SupabaseConfig } from './types';
 import { SupabaseService } from './services/supabaseService';
 
 import Header from './components/Header';
 import StatsCards from './components/StatsCards';
-
-// Placeholder ExcelUpload component added inline because './components/ExcelUpload' was missing.
-// This keeps the app working until the real component file is added.
-const ExcelUpload: React.FC<{ isOpen: boolean; onClose: () => void; onBulkSave: (rows: Partial<Product>[]) => void; }> = ({ isOpen, onClose }) => {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
-      <div className="bg-white rounded p-6 w-full max-w-md">
-        <h3 className="text-lg font-bold mb-2">Excel Upload</h3>
-        <p className="text-sm text-gray-600 mb-4">Placeholder component - original './components/ExcelUpload' is missing.</p>
-        <div className="flex justify-end">
-          <button className="px-4 py-2 bg-slate-600 text-white rounded" onClick={onClose}>Close</button>
-        </div>
-      </div>
-    </div>
-  );
-};
+import ExcelUpload from './components/ExcelUpload';
 import InventoryTable from './components/InventoryTable';
 import ProductModal from './components/ProductModal';
 import SetupScreen from './components/SetupScreen';
@@ -95,6 +78,7 @@ const App: React.FC = () => {
       showAlert('Please enter a quantity of at least 1 before saving.');
       return;
     }
+    
     try {
       if (editingProduct) {
         await supabase.updateProduct(editingProduct.product_name, data);
@@ -121,8 +105,10 @@ const App: React.FC = () => {
       for (const r of rows) {
         const name = (r.product_name || '').trim();
         if (!name) continue;
+        
         // If product exists in current inventory, update; otherwise create
         const existing = products.find(p => p.product_name.toLowerCase() === name.toLowerCase());
+        
         try {
           if (existing) {
             await supabase.updateProduct(existing.product_name, {
@@ -246,8 +232,8 @@ const App: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col min-w-0 overflow-hidden">
+    <div className="min-h-screen bg-slate-50">
+      <div className="flex flex-col min-h-screen">
         <Header 
           onAddClick={() => { setEditingProduct(undefined); setIsModalOpen(true); }} 
           onBuyClick={() => setIsUploadOpen(true)}
@@ -256,28 +242,19 @@ const App: React.FC = () => {
           loading={loading}
         />
         
-        <main className="flex-1 overflow-y-auto p-4 lg:p-8">
-          <div className="space-y-8">
-            
-
+        <main className="flex-1 overflow-y-auto scrollbar-thin">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
             <StatsCards products={products} />
-            
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-              <div className="xl:col-span-12 space-y-8">
-                <InventoryTable 
-                  products={filteredProducts} 
-                  onEdit={(p) => { setEditingProduct(p); setIsModalOpen(true); }}
-                  onDelete={requestDeleteProduct}
-                  onRestore={handleRestoreProduct}
-                  viewMode={viewMode}
-                  onChangeView={(v) => setViewMode(v)}
-                  onCheck={handleCheckProduct}
-                  loading={loading}
-                />
-                
-              </div>
-              
-            </div>
+            <InventoryTable 
+              products={filteredProducts} 
+              onEdit={(p) => { setEditingProduct(p); setIsModalOpen(true); }}
+              onDelete={requestDeleteProduct}
+              onRestore={handleRestoreProduct}
+              viewMode={viewMode}
+              onChangeView={(v) => setViewMode(v)}
+              onCheck={handleCheckProduct}
+              loading={loading}
+            />
           </div>
         </main>
       </div>

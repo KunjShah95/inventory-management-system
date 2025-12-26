@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Product } from '../types';
 
 interface ProductModalProps {
@@ -15,8 +14,14 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
     quantity: 1,
     cost: 0
   });
-  const [previewRows, setPreviewRows] = useState<Partial<Product>[]>([]);
   const [quantityError, setQuantityError] = useState<string | null>(null);
+  const nameRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => nameRef.current?.focus(), 100);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (product) {
@@ -24,6 +29,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
     } else {
       setFormData({ product_name: '', quantity: 1, cost: 0 });
     }
+    setQuantityError(null);
   }, [product, isOpen]);
 
   if (!isOpen) return null;
@@ -38,91 +44,125 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
     onSave(formData);
   };
 
-  const updateRow = (index: number, patch: Partial<Product>) => {
-    setPreviewRows(prev => prev.map((r, i) => i === index ? { ...r, ...patch } : r));
-  };
+  const totalValue = ((formData.quantity || 0) * (formData.cost || 0)).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className={`bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-auto max-h-[90vh] animate-in fade-in zoom-in duration-200`}>
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-800">
-            {product ? 'Edit Product' : 'Add New Product'}
-          </h2>
-          <button onClick={onClose} aria-label="Close dialog" title="Close" className="text-gray-400 hover:text-gray-600 transition-colors">
-            <i className="fas fa-times text-xl" aria-hidden="true"></i>
-          </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
+        {/* Header */}
+        <div className="px-6 py-5 bg-gradient-to-r from-blue-500 to-blue-600 border-b border-blue-600">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                <i className={`fas ${product ? 'fa-pen' : 'fa-plus'} text-white text-lg`}></i>
+              </div>
+              <h2 className="text-xl font-bold text-white">
+                {product ? 'Edit Product' : 'Add New Product'}
+              </h2>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-white/80 hover:text-white transition-colors p-1"
+              aria-label="Close"
+            >
+              <i className="fas fa-times text-xl"></i>
+            </button>
+          </div>
         </div>
-        
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Upload moved to Buy -> Excel Upload modal */}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {/* Product Name */}
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-1 tracking-wide">Product Name</label>
-            <input 
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
+              Product Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              ref={nameRef}
               required
-              type="text" 
+              type="text"
               value={formData.product_name}
               onChange={(e) => setFormData({ ...formData, product_name: e.target.value })}
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
-              placeholder="e.g., iPhone 15 Pro"
+              className="input"
+              placeholder="e.g., iPhone 15 Pro Max"
             />
           </div>
-          
+
+          {/* Quantity & Cost Grid */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1 tracking-wide">Quantity</label>
-              <input 
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
+                Quantity <span className="text-red-500">*</span>
+              </label>
+              <input
                 required
-                type="number" 
+                type="number"
                 min="1"
-                  value={formData.quantity}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value);
-                    const qty = Number.isNaN(val) ? 1 : val;
-                    const clamped = Math.max(1, qty);
-                    setFormData({ ...formData, quantity: clamped });
-                    if (qty < 1) setQuantityError('Please enter a quantity of at least 1');
-                    else setQuantityError(null);
-                  }}
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                value={formData.quantity}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value);
+                  const qty = Number.isNaN(val) ? 1 : Math.max(1, val);
+                  setFormData({ ...formData, quantity: qty });
+                  setQuantityError(qty < 1 ? 'Min quantity is 1' : null);
+                }}
+                className={`input ${quantityError ? 'border-red-500 focus:border-red-500' : ''}`}
                 placeholder="1"
               />
-                {quantityError && <p className="text-xs text-rose-600 mt-1">{quantityError}</p>}
+              {quantityError && (
+                <p className="text-xs text-red-600 mt-1 font-medium">{quantityError}</p>
+              )}
             </div>
+
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1 tracking-wide">Unit Cost (Rs)</label>
-              <input 
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
+                Unit Cost (₹) <span className="text-red-500">*</span>
+              </label>
+              <input
                 required
-                type="number" 
+                type="number"
                 step="0.01"
                 min="0"
                 value={formData.cost}
                 onChange={(e) => setFormData({ ...formData, cost: parseFloat(e.target.value) || 0 })}
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                className="input"
                 placeholder="0.00"
               />
             </div>
           </div>
 
-          <div className="pt-4 flex items-center space-x-3">
-            <button 
+          {/* Total Value Display */}
+          <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl p-4 border border-slate-200">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-slate-600">Total Inventory Value</span>
+              <span className="text-2xl font-bold text-slate-900">₹{totalValue}</span>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-2">
+            <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all"
+              className="btn btn-secondary flex-1 py-3"
             >
+              <i className="fas fa-times mr-2"></i>
               Cancel
             </button>
-            <button 
+            <button
               type="submit"
               disabled={!!quantityError}
-              className={`flex-2 px-4 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all ${quantityError ? 'opacity-60 pointer-events-none' : ''}`}
+              className={`btn btn-primary flex-1 py-3 shadow-lg ${
+                quantityError ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             >
-              {product ? 'Update Details' : 'Save Product'}
+              <i className={`fas ${product ? 'fa-check' : 'fa-plus'} mr-2`}></i>
+              {product ? 'Update' : 'Add Product'}
             </button>
-            {/* Preview upload moved to Buy -> Excel Upload modal */}
           </div>
         </form>
-        {/* Preview and confirm modal removed from ProductModal; use ExcelUpload modal instead */}
       </div>
     </div>
   );
