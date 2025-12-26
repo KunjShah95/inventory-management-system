@@ -4,12 +4,13 @@ import { SupabaseService } from './services/supabaseService';
 
 import Header from './components/Header';
 import StatsCards from './components/StatsCards';
-import ExcelUpload from './components/ExcelUpload';
 import InventoryTable from './components/InventoryTable';
-import ProductModal from './components/ProductModal';
-import SetupScreen from './components/SetupScreen';
-import ConfirmDialog from './components/ConfirmDialog';
-import Alert from './components/Alert';
+import ActivityFeed from './components/ActivityFeed';
+
+const ExcelUpload = React.lazy(() => import('./components/ExcelUpload'));
+const ProductModal = React.lazy(() => import('./components/ProductModal'));
+const ConfirmDialog = React.lazy(() => import('./components/ConfirmDialog'));
+const Alert = React.lazy(() => import('./components/Alert'));
 
 interface Activity {
   id: string;
@@ -232,7 +233,7 @@ const App: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50/50">
       <div className="flex flex-col min-h-screen">
         <Header 
           onAddClick={() => { setEditingProduct(undefined); setIsModalOpen(true); }} 
@@ -243,42 +244,52 @@ const App: React.FC = () => {
         />
         
         <main className="flex-1 overflow-y-auto scrollbar-thin">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
             <StatsCards products={products} />
-            <InventoryTable 
-              products={filteredProducts} 
-              onEdit={(p) => { setEditingProduct(p); setIsModalOpen(true); }}
-              onDelete={requestDeleteProduct}
-              onRestore={handleRestoreProduct}
-              viewMode={viewMode}
-              onChangeView={(v) => setViewMode(v)}
-              onCheck={handleCheckProduct}
-              loading={loading}
-            />
+            
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+              <div className="lg:col-span-3">
+                <InventoryTable 
+                  products={filteredProducts} 
+                  onEdit={(p) => { setEditingProduct(p); setIsModalOpen(true); }}
+                  onDelete={requestDeleteProduct}
+                  onRestore={handleRestoreProduct}
+                  viewMode={viewMode}
+                  onChangeView={(v) => setViewMode(v)}
+                  onCheck={handleCheckProduct}
+                  loading={loading}
+                />
+              </div>
+              <div className="lg:col-span-1">
+                <ActivityFeed activities={activities} />
+              </div>
+            </div>
           </div>
         </main>
       </div>
 
-      <ProductModal 
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveProduct}
-        product={editingProduct}
-      />
+      <React.Suspense fallback={null}>
+        <ProductModal 
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSaveProduct}
+          product={editingProduct}
+        />
 
-      <ExcelUpload
-        isOpen={isUploadOpen}
-        onClose={() => setIsUploadOpen(false)}
-        onBulkSave={handleBulkSaveProducts}
-      />
-      <ConfirmDialog
-        isOpen={confirmOpen}
-        title="Delete Product"
-        message={pendingDeleteName ? `Are you sure you want to delete ${pendingDeleteName}?` : 'Are you sure you want to delete this product?'}
-        onConfirm={handleDeleteConfirmed}
-        onCancel={handleCancelDelete}
-      />
-      <Alert isOpen={alertOpen} message={alertMessage} onClose={closeAlert} />
+        <ExcelUpload
+          isOpen={isUploadOpen}
+          onClose={() => setIsUploadOpen(false)}
+          onBulkSave={handleBulkSaveProducts}
+        />
+        <ConfirmDialog
+          isOpen={confirmOpen}
+          title="Delete Product"
+          message={pendingDeleteName ? `Are you sure you want to delete ${pendingDeleteName}?` : 'Are you sure you want to delete this product?'}
+          onConfirm={handleDeleteConfirmed}
+          onCancel={handleCancelDelete}
+        />
+        <Alert isOpen={alertOpen} message={alertMessage} onClose={closeAlert} />
+      </React.Suspense>
     </div>
   );
 };

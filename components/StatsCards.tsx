@@ -87,7 +87,7 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, icon, gradient, trend
           {value}
         </h3>
       </div>
-      <div className={`flex items-center justify-center w-12 h-12 bg-gradient-to-br ${gradient} rounded-xl shadow-md group-hover:shadow-lg transition-shadow`}>
+      <div className={`flex items-center justify-center w-12 h-12 bg-linear-to-br ${gradient} rounded-xl shadow-md group-hover:shadow-lg transition-shadow`}>
         <i className={`fas ${icon} text-white text-lg`}></i>
       </div>
     </div>

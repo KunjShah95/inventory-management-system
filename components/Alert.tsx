@@ -16,9 +16,9 @@ const Alert: React.FC<AlertProps> = ({ isOpen, message, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 pointer-events-none animate-fade-in">
+    <div className="fixed inset-0 z-70 flex items-center justify-center p-4 pointer-events-none animate-fade-in">
       <div className="pointer-events-auto bg-white max-w-md w-full rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-slide-up">
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+        <div className="bg-linear-to-r from-blue-500 to-blue-600 px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
               <i className="fas fa-circle-info text-white text-lg"></i>

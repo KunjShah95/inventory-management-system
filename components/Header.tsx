@@ -15,7 +15,7 @@ const Header: React.FC<HeaderProps> = ({ onAddClick, onBuyClick, onSearchChange,
         <div className="flex items-center justify-between h-16 sm:h-20 gap-4">
           {/* Logo & Title */}
           <div className="flex items-center gap-3 min-w-0">
-            <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl sm:rounded-2xl shadow-md">
+            <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-linear-to-br from-blue-600 to-blue-700 rounded-xl sm:rounded-2xl shadow-md">
               <i className="fas fa-boxes-stacked text-white text-lg sm:text-xl"></i>
             </div>
             <div className="hidden sm:block min-w-0">

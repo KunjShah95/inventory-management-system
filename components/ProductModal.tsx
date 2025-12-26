@@ -53,7 +53,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
       <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
         {/* Header */}
-        <div className="px-6 py-5 bg-gradient-to-r from-blue-500 to-blue-600 border-b border-blue-600">
+        <div className="px-6 py-5 bg-linear-to-r from-blue-500 to-blue-600 border-b border-blue-600">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
@@ -134,7 +134,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
           </div>
 
           {/* Total Value Display */}
-          <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl p-4 border border-slate-200">
+          <div className="bg-linear-to-r from-slate-50 to-slate-100 rounded-xl p-4 border border-slate-200">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-slate-600">Total Inventory Value</span>
               <span className="text-2xl font-bold text-slate-900">₹{totalValue}</span>

@@ -200,6 +200,16 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
                     </td>
                     <td className="px-4 sm:px-6 py-4">
                       <div className="flex items-center justify-end gap-1">
+                        {active && onCheck && (
+                          <button
+                            onClick={() => onCheck(product)}
+                            className="btn btn-ghost p-2 rounded-lg hover:bg-indigo-50 hover:text-indigo-600 transition-all"
+                            aria-label={`Check ${product.product_name}`}
+                            title="Quick Check"
+                          >
+                            <i className="fas fa-check-double text-sm"></i>
+                          </button>
+                        )}
                         <button
                           onClick={() => onEdit(product)}
                           disabled={!active}

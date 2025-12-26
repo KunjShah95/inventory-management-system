@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Product } from '../types';
-import * as XLSX from 'xlsx';
 
 interface ExcelUploadProps {
   isOpen: boolean;
@@ -19,6 +18,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, onBulkSave }
     if (!file) return;
     setProcessing(true);
     try {
+      const XLSX = await import('xlsx');
       const ab = await file.arrayBuffer();
       const wb = XLSX.read(ab, { type: 'array' });
       const sheet = wb.Sheets[wb.SheetNames[0]];
@@ -59,7 +59,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, onBulkSave }
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
         <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl max-h-[90vh] flex flex-col animate-scale-in">
           {/* Header */}
-          <div className="px-6 py-5 bg-gradient-to-r from-emerald-500 to-emerald-600 border-b border-emerald-600">
+          <div className="px-6 py-5 bg-linear-to-r from-blue-600 to-indigo-600 border-b border-blue-700">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
@@ -80,10 +80,12 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, onBulkSave }
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-6 space-y-5">
             {/* Upload Section */}
-            <div className="bg-slate-50 rounded-xl p-6 border-2 border-dashed border-slate-300 hover:border-emerald-500 transition-colors">
+            <div className="bg-slate-50 rounded-2xl p-8 border-2 border-dashed border-slate-200 hover:border-blue-500 hover:bg-blue-50/30 transition-all group">
               <div className="text-center mb-4">
-                <i className="fas fa-cloud-arrow-up text-4xl text-slate-400 mb-3"></i>
-                <h3 className="font-semibold text-slate-700 mb-1">Upload Excel or CSV File</h3>
+                <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                  <i className="fas fa-cloud-arrow-up text-3xl text-blue-500"></i>
+                </div>
+                <h3 className="font-bold text-slate-900 mb-1">Upload Excel or CSV File</h3>
                 <p className="text-sm text-slate-500">
                   Supported formats: .xlsx, .xls, .csv
                 </p>
@@ -92,70 +94,73 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, onBulkSave }
                 type="file"
                 accept=".xlsx,.xls,.csv"
                 onChange={(e) => handleFile(e.target.files?.[0] || null)}
-                className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
+                className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer transition-all"
                 aria-label="Upload Excel or CSV file"
               />
-              <p className="text-xs text-slate-400 mt-3 text-center">
-                Required columns: <code className="bg-white px-2 py-0.5 rounded text-emerald-600 font-mono">product_name</code>,{' '}
-                <code className="bg-white px-2 py-0.5 rounded text-emerald-600 font-mono">quantity</code>,{' '}
-                <code className="bg-white px-2 py-0.5 rounded text-emerald-600 font-mono">cost</code>
+              <p className="text-xs text-slate-400 mt-4 text-center">
+                Required columns: <code className="bg-white px-2 py-0.5 rounded text-blue-600 font-mono border border-slate-100">product_name</code>,{' '}
+                <code className="bg-white px-2 py-0.5 rounded text-blue-600 font-mono border border-slate-100">quantity</code>,{' '}
+                <code className="bg-white px-2 py-0.5 rounded text-blue-600 font-mono border border-slate-100">cost</code>
               </p>
             </div>
 
             {/* Preview Section */}
             {previewRows.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-bold text-slate-900">Preview & Edit ({previewRows.length} rows)</h3>
+              <div className="animate-fade-in">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                    Preview & Edit 
+                    <span className="bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full text-xs">{previewRows.length} rows</span>
+                  </h3>
                   <button
                     onClick={() => setPreviewRows([])}
-                    className="btn btn-ghost text-xs px-3 py-1.5"
+                    className="text-xs font-bold text-red-500 hover:text-red-600 transition-colors flex items-center gap-1"
                   >
-                    <i className="fas fa-trash mr-1"></i>
+                    <i className="fas fa-trash-alt"></i>
                     Clear All
                   </button>
                 </div>
-                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
                   <div className="overflow-x-auto max-h-80 scrollbar-thin">
                     <table className="w-full text-sm">
-                      <thead className="bg-slate-100 sticky top-0">
+                      <thead className="bg-slate-50 sticky top-0 z-10">
                         <tr>
-                          <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">#</th>
-                          <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Product Name</th>
-                          <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Quantity</th>
-                          <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Cost (₹)</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">#</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Product Name</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Quantity</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Cost (₹)</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 bg-white">
                         {previewRows.map((row, i) => (
-                          <tr key={i} className="hover:bg-slate-50">
-                            <td className="px-3 py-2 text-slate-500 font-mono text-xs">{i + 1}</td>
-                            <td className="px-3 py-2">
+                          <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-4 py-3 text-slate-400 font-mono text-xs">{i + 1}</td>
+                            <td className="px-4 py-3">
                               <input
                                 value={row.product_name || ''}
                                 onChange={(e) => updateRow(i, { product_name: e.target.value })}
-                                className="w-full px-2 py-1 border border-slate-200 rounded focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none text-sm"
+                                className="input py-1.5 text-sm"
                                 placeholder="Product name"
                               />
                             </td>
-                            <td className="px-3 py-2">
+                            <td className="px-4 py-3">
                               <input
                                 type="number"
                                 min="0"
                                 value={row.quantity ?? ''}
                                 onChange={(e) => updateRow(i, { quantity: parseInt(e.target.value) || 0 })}
-                                className="w-24 px-2 py-1 border border-slate-200 rounded focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none text-sm"
+                                className="input py-1.5 text-sm w-24"
                                 placeholder="0"
                               />
                             </td>
-                            <td className="px-3 py-2">
+                            <td className="px-4 py-3">
                               <input
                                 type="number"
                                 step="0.01"
                                 min="0"
                                 value={row.cost ?? ''}
                                 onChange={(e) => updateRow(i, { cost: parseFloat(e.target.value) || 0 })}
-                                className="w-32 px-2 py-1 border border-slate-200 rounded focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none text-sm"
+                                className="input py-1.5 text-sm w-32"
                                 placeholder="0.00"
                               />
                             </td>
@@ -167,22 +172,23 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, onBulkSave }
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex justify-end gap-3 mt-4">
+                <div className="flex justify-end gap-3 mt-6">
                   <button
                     onClick={() => setConfirmOpen(true)}
-                    className="btn btn-success px-6 py-2.5 shadow-lg"
+                    className="btn btn-primary px-8 py-3 shadow-lg shadow-blue-500/20"
                   >
-                    <i className="fas fa-check mr-2"></i>
-                    Confirm & Save ({previewRows.length})
+                    <i className="fas fa-check-circle mr-2"></i>
+                    Confirm & Save
                   </button>
                 </div>
               </div>
             )}
 
             {processing && (
-              <div className="text-center py-8">
-                <i className="fas fa-spinner fa-spin text-3xl text-emerald-500 mb-3"></i>
-                <p className="text-slate-600 font-medium">Processing file...</p>
+              <div className="text-center py-12">
+                <div className="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-slate-600 font-bold">Processing file...</p>
+                <p className="text-xs text-slate-400 mt-1">Reading spreadsheet data</p>
               </div>
             )}
           </div>
@@ -191,30 +197,29 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, onBulkSave }
 
       {/* Confirmation Dialog */}
       {confirmOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
-            <div className="text-center mb-4">
-              <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i className="fas fa-check text-emerald-600 text-xl"></i>
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl animate-scale-in">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <i className="fas fa-cloud-upload-alt text-blue-600 text-2xl"></i>
               </div>
-              <h4 className="font-bold text-lg text-slate-900">Confirm Upload</h4>
+              <h4 className="font-black text-xl text-slate-900">Confirm Upload</h4>
+              <p className="text-sm text-slate-500 mt-2">
+                You are about to save <strong className="text-blue-600">{previewRows.length} products</strong> to the inventory.
+              </p>
             </div>
-            <p className="text-sm text-slate-600 text-center mb-6">
-              You are about to save <strong className="text-emerald-600">{previewRows.length} products</strong> to the inventory.
-              This will create or update products as needed.
-            </p>
+            
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmOpen(false)}
-                className="btn btn-secondary flex-1 py-2.5"
+                className="btn btn-secondary flex-1 py-3"
               >
                 Cancel
               </button>
               <button
                 onClick={handleBulkSave}
-                className="btn btn-success flex-1 py-2.5"
+                className="btn btn-primary flex-1 py-3"
               >
-                <i className="fas fa-check mr-2"></i>
                 Confirm
               </button>
             </div>
